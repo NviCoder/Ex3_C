@@ -9,13 +9,11 @@ Write your code in this editor and press "Run" button to compile and execute it.
 #include <stdio.h>
 #include <string.h>
 
-int nodeId = 65535; //change it!
-int getUniqueID()
-{
- static int id=-1;
- id++;
- return nodeId*1000 + id;
-} 
+typedef struct Node{
+    int ip;
+    int port;
+    int id;
+}Node;
 
 typedef struct Message{
     int msgID;
@@ -27,6 +25,30 @@ typedef struct Message{
 }Message;
 
 
+int nodeId = -1; //change it!
+Node node;
+int capacity = 100;
+int waitingLength = 0;
+Message **waiting =  (Message**)malloc(sizeof(Message*)*capacity);
+
+int getUniqueID()
+{
+ static int idMsg=-1;
+ idMsg++;
+ return nodeId*1000 + idMsg;
+} 
+
+void out(Message *packetOut){
+    //TODO
+}
+
+void addWaitingMessage(Message *packet){
+    if (waitingLength == capacity)
+        waiting = (Message**) realloc(waiting,sizeof(Message*)*(waitingLength*2));
+    waiting[waitingLength] = packet;
+    waitingLength++;
+}
+
 void printMessage(Message *packet){
     printf("msgID: %d\n",packet->msgID);
     printf("sourceID: %d\n",packet->sourceID);
@@ -35,8 +57,6 @@ void printMessage(Message *packet){
     printf("functionID: %d\n",packet->functionID);
     printf("payload: %s\n",packet->payload); //If the string starts with number, it is may contain '\0'
 }
-
-
 
 void createAck(Message *packetIn, Message *packetOut){
     packetOut->msgID = getUniqueID();
@@ -55,6 +75,59 @@ void createNack(Message *packetIn, Message *packetOut){
     packetOut->functionID = 2;
     int2byte(packetIn->msgID, packetOut->payload, 0);
 }
+
+void connect() {
+    // open TCP
+    // if (error){
+    //     printf("nack");
+    //     return;
+    // }
+    
+    Message *connectMsg = (Message*) malloc(sizeof (Message));
+    connectMsg->msgID = getUniqueID();
+    connectMsg->sourceID = nodeId;
+    connectMsg->destinationID = 0;
+    connectMsg->trailingMsg = 0;
+    connectMsg->functionID = 4;
+    connectMsg->payload[0] = '\0';
+    
+    out(connectMsg);
+    addWaitingMessage(connectMsg);
+}
+
+void responseConnect(Message *packetIn, Message *packetOut){
+   
+    createAck(packetIn, packetOut);
+    out(packetOut);
+    
+    //TODO add new node to the connected-list
+}
+
+void getResponseConnect(Message *packetIn){
+    int firstIdMessage = byte2int(packetIn->payload, 0);
+    Message *firstConnectMessage;
+    for (int i=0; i<waitingLength; i++)
+        if (waiting[i]!=NULL && waiting[i]->msgID == firstIdMessage){
+            firstConnectMessage = waiting[i];
+            break;
+        }
+    
+    if (firstConnectMessage == null){
+        printf("nack");
+        return;
+    }
+    if (packetIn->sourceID != firstConnectMessage->destinationID || packetIn->destinationID != node.id || packetIn->functionID != 1){
+        printf("nack");
+        free(firstConnectMessage);
+        return;
+    }
+    
+     //TODO add new node to the connected-list
+     
+    printf("connect to node number %d\n", packetIn->sourceID);
+    free(firstConnectMessage);
+}
+
 
 void createSend(Message *packet, int from, int to, int trailing, char* msg){
     packet->msgID = getUniqueID();
@@ -143,6 +216,13 @@ void getBytes(Message *packet, char *bytes){
 
 int main()
 {
+    nodeId = 65535;
+    node.port=nodeId;
+    node.ip= 0X0A000001;
+    node.id = 1;
+    
+    connect();
+    
     
     send(5, 15, "abcd efgh ijkl\n");
     
