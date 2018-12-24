@@ -40,11 +40,13 @@ int main()
         p = strtok (NULL, ",");
     }
 
+
+    //choose function
     int type = input_type(split[0]);
     
     switch (type){
         case (0):
-            setid(split[1]);
+            setid(split[1],split[2]);
             break;
         case (1):
             connect(split[1]);
