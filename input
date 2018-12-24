@@ -23,29 +23,42 @@ int input_type (char *first){
     return -1;
 }
 
-void input_split(char *s, char *(*split[])){
-    int len = strlen(s);
-    int index=0, i=0, j=0;
-    while (i<len && s[i]!='\0'){
-        if (s[i] == ','){
-            if (index<3)
-                index++;
-            j=0;
-        }
-        else{
-            split*[index][j] = s[i];
-        }
-    }
-}
 
 int main()
 {
-    char *s = "send,1234";
-    char* split[4];
-    input_split(s, *split);
+    char input[] ="send,1234,5678,910";
+    char *split[4];
+    
+    
+    //split the input
+    int i = 0;
+    char *p = strtok (input, ",");
+    
+    while (p != NULL)
+    {
+        split[i++] = p;
+        p = strtok (NULL, ",");
+    }
+
     int type = input_type(split[0]);
     
-    printf("%d", type);
-    printf("%s", split[0]);
+    switch (type){
+        case (0):
+            setid(split[1]);
+            break;
+        case (1):
+            connect(split[1]);
+            break;
+        case (2):
+            send(split[1],split[2],split[3]);
+            break;
+        case (4):
+            route(split[1]);
+            break;
+        case (8):
+            peers();
+            break;
+    }
+    
     return 0;
 }
