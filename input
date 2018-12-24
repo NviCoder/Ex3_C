@@ -1,0 +1,51 @@
+/******************************************************************************
+
+                            Online C Compiler.
+                Code, Compile, Run and Debug C program online.
+Write your code in this editor and press "Run" button to compile and execute it.
+
+*******************************************************************************/
+
+#include <stdio.h>
+#include<string.h>
+ 
+int input_type (char *first){
+    if (strcmp(first, "setid")==0)
+        return 0;
+    if (strcmp(first, "connect")==0)
+        return 1;
+    if (strcmp(first, "send")==0)
+        return 2;
+    if (strcmp(first, "route")==0)
+        return 4;
+    if (strcmp(first, "peers")==0)
+        return 8;
+    return -1;
+}
+
+void input_split(char *s, char *(*split[])){
+    int len = strlen(s);
+    int index=0, i=0, j=0;
+    while (i<len && s[i]!='\0'){
+        if (s[i] == ','){
+            if (index<3)
+                index++;
+            j=0;
+        }
+        else{
+            split*[index][j] = s[i];
+        }
+    }
+}
+
+int main()
+{
+    char *s = "send,1234";
+    char* split[4];
+    input_split(s, *split);
+    int type = input_type(split[0]);
+    
+    printf("%d", type);
+    printf("%s", split[0]);
+    return 0;
+}
