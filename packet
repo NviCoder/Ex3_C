@@ -10,76 +10,83 @@ Write your code in this editor and press "Run" button to compile and execute it.
 #include <string.h>
 
 typedef struct Message{
-    int c[128];
+    int msgID;
+    int sourceID;
+    int destinationID;
+    int trailingMsg;
+    int functionID;
+    char payload[492];
 }Message;
 
-int getMsgID(Message *packet){
-    return packet->c[0];
-}
 
-int getSourceID(Message *packet){
-    return packet->c[1];
-}
-
-int getDestinationID(Message *packet){
-    return packet->c[2];
-}
-
-int getTrailingMsg(Message *packet){
-    return packet->c[3];
-}
-
-int getFunctionID(Message *packet){
-    return packet->c[4];
-}
-
-//length of function is 123
-void getPayload(Message *packet, char* answer){
+//length of answer is 492
+void getPayload(Message *packet, char *answer){
     int i=0;
-    while (i<123){
-        answer[i]=packet->c[i+5];
+    while (i<492){
+        answer[i]=packet->payload[i];
         i++;
     }
 }
 
-
-void setMSGID(Message *packet, int msgId){
-    packet->c[0] = msgId;
-}
-
-void setSourceID(Message *packet, int sourceId){
-    packet->c[1] = sourceId;
-}
-
-void setDestinationID(Message *packet, int destId){
-    packet->c[2] = destId;
-}
-
-void setTrailingMsg(Message *packet, int trailMsg){
-    packet->c[3] = trailMsg;
-}
-
-void setFunctionID(Message *packet, int funcId){
-    packet->c[4] = funcId;
-}
-
-void setPayload(Message *packet, char* payload){
+void setPayload(Message *packet, char* new_payload){
     int i=0;
-    while (i<128){
-        packet->c[i+5] = payload[i];
+    while (i<492){
+        packet->payload[i] = new_payload[i];
         i++;
     }
 }
 
+int byte2int(char *bytes, int startPoint){
+    return bytes[startPoint+3] + (bytes[startPoint+2] << 8) + (bytes[startPoint+1] << 16) + (bytes[startPoint] << 24)
+}
+
+//length of input is 512
+void setMessage(Message *packet, char* bytes){
+    packet->msgID = byte2int(bytes, 0);
+    packet->sourceID = byte2int(bytes, 4);
+    packet->destinationID = byte2int(bytes, 8);
+    packet->trailingMsg = byte2int(bytes, 12);
+    packet->functionID = byte2int(bytes, 16);
+    
+    for (int i=0; i<492; i++)
+         packet->payload[i] = bytes[i+20];
+}
+
+void int2byte(int num, char *bytes, int startPoint){
+    bytes[startPoint] = (num>>24) & 0xFF;
+    bytes[startPoint+1] = (num>>16) & 0xFF;
+    bytes[startPoint+2] = (num>>8) & 0xFF;
+    bytes[startPoint+3] = num & 0xFF;
+}
+
+//length of input is 512
+void getBytes(Message *packet, char *bytes){
+    int2byte(packet->msgID, bytes, 0);
+    int2byte(packet->sourceID, bytes, 4);
+    int2byte(packet->destinationID, bytes, 8);
+    int2byte(packet->trailingMsg, bytes, 12);
+    int2byte(packet->functionID, bytes, 16);
+
+    for (int i=0; i<492; i++)
+        bytes[i+20] = packet->payload[i];
+}
 
 int main()
 {
-    Message m;
-    char answer[123];
-    setFunctionID(&m, 5);
-    setPayload(&m, "0123");
-    int a = (int)getFunctionID(&m);
-    printf("function id: %d", &a);
-    getPayload(&m, &answer);
-    printf("%s", answer);
+    
+   Message msg;
+   msg.msgID = 2049;
+   char ans[492];
+   getBytes(&msg, ans);
+   
+   setMessage(&msg, ans);
+   printf("%d\n",msg.msgID);
+
+//   printf("%d\n", ans[0]);
+//   printf("%d\n", ans[1]);
+//   printf("%d\n", ans[2]);
+//   printf("%d\n", ans[3]);
+   
+    
+    
 }
