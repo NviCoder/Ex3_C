@@ -26,7 +26,7 @@ int input_type (char *first){
 
 int main()
 {
-    char input[] ="send,1234,5678,910";
+    char input[] ="send,234,5678910,asam";
     char *split[4];
     
     
@@ -36,9 +36,19 @@ int main()
     
     while (p != NULL)
     {
-        split[i++] = p;
-        p = strtok (NULL, ",");
+        if (i<4) {
+            split[i++] = p;
+            p = strtok (NULL, ",");
+        }
+        else{
+            strcat(split[3],",");
+            strcat(split[3],p);
+            p = strtok (NULL, ",");
+        }
     }
+    
+    for (i=0; i<4; i++)
+        printf("%s\n",split[i]);
 
 
     //choose function
