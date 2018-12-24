@@ -9,6 +9,14 @@ Write your code in this editor and press "Run" button to compile and execute it.
 #include <stdio.h>
 #include <string.h>
 
+int nodeId = 65535; //change it!
+int getUniqueID()
+{
+ static int id=-1;
+ id++;
+ return nodeId*1000 + id;
+} 
+
 typedef struct Message{
     int msgID;
     int sourceID;
@@ -18,13 +26,66 @@ typedef struct Message{
     char payload[492];
 }Message;
 
+
 void printMessage(Message *packet){
     printf("msgID: %d\n",packet->msgID);
     printf("sourceID: %d\n",packet->sourceID);
     printf("destinationID: %d\n",packet->destinationID);
     printf("trailingMsg: %d\n",packet->trailingMsg);
     printf("functionID: %d\n",packet->functionID);
-    printf("payload: %s\n",packet->payload);
+    printf("payload: %s\n",packet->payload); //If the string starts with number, it is may contain '\0'
+}
+
+
+
+void createAck(Message *packetIn, Message *packetOut){
+    packetOut->msgID = getUniqueID();
+    packetOut->sourceID = packetIn->destinationID;
+    packetOut->destinationID = packetIn->sourceID;
+    packetOut->trailingMsg = 0;
+    packetOut->functionID = 1;
+    int2byte(packetIn->msgID, packetOut->payload, 0);
+}
+
+void createNack(Message *packetIn, Message *packetOut){
+    packetOut->msgID = getUniqueID();
+    packetOut->sourceID = packetIn->destinationID;
+    packetOut->destinationID = packetIn->sourceID;
+    packetOut->trailingMsg = 0;
+    packetOut->functionID = 2;
+    int2byte(packetIn->msgID, packetOut->payload, 0);
+}
+
+void createSend(Message *packet, int from, int to, int trailing, char* msg){
+    packet->msgID = getUniqueID();
+    packet->sourceID = from;
+    packet->destinationID = to;
+    packet->trailingMsg = trailing;
+    packet->functionID = 32;
+    strcpy(packet->payload, msg);
+}
+
+void send(int to, int length, char *str){
+    char *allStr = (char*) malloc(sizeof(char)*(length+4));
+    int2byte(length, allStr, 0); //dosen't working, I don't know why
+    for (int i=0; i<length; i++)
+        allStr[i+4] = str[i];
+
+    int num_of_messages = (length-4-1)/492 + 1; //4 chars for the total length of the message    
+    for (int i=0; i<num_of_messages; i++){
+        Message *sendMsg = (Message*) malloc(sizeof (Message));
+        char currentStr[492];
+        for (int j=0; j<492 && j<length+4-i*492; j++)
+            currentStr[j] = allStr[i*492+j];
+        createSend(sendMsg, nodeId, to, num_of_messages-i-1, currentStr);
+        
+        //TODO
+        // send the message!!!
+        printMessage(sendMsg);
+        
+        free(sendMsg); //Is it OK?
+    }
+    free (allStr);
 }
 
 //length of answer is 492
@@ -65,6 +126,7 @@ void int2byte(int num, char *bytes, int startPoint){
     bytes[startPoint+1] = (num>>16) & 0xFF;
     bytes[startPoint+2] = (num>>8) & 0xFF;
     bytes[startPoint+3] = num & 0xFF;
+
 }
 
 //length of input is 512
@@ -82,19 +144,7 @@ void getBytes(Message *packet, char *bytes){
 int main()
 {
     
-   Message msg;
-    msg.msgID = 2049;
-    msg.sourceID = 2;
-    msg.destinationID = 15298;
-    msg.trailingMsg = 1;
-    msg.functionID = 32;
-    strcpy(msg.payload, "hello world");
-   
-   char ans[512];
-   getBytes(&msg, ans);
-   
-   Message msg2;
-   setMessage(&msg2, ans);
-    printMessage(&msg2);
+    send(5, 15, "abcd efgh ijkl\n");
+    
  
 }
