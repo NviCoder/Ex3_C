@@ -18,6 +18,14 @@ typedef struct Message{
     char payload[492];
 }Message;
 
+void printMessage(Message *packet){
+    printf("msgID: %d\n",packet->msgID);
+    printf("sourceID: %d\n",packet->sourceID);
+    printf("destinationID: %d\n",packet->destinationID);
+    printf("trailingMsg: %d\n",packet->trailingMsg);
+    printf("functionID: %d\n",packet->functionID);
+    printf("payload: %s\n",packet->payload);
+}
 
 //length of answer is 492
 void getPayload(Message *packet, char *answer){
@@ -37,7 +45,7 @@ void setPayload(Message *packet, char* new_payload){
 }
 
 int byte2int(char *bytes, int startPoint){
-    return bytes[startPoint+3] + (bytes[startPoint+2] << 8) + (bytes[startPoint+1] << 16) + (bytes[startPoint] << 24)
+    return bytes[startPoint+3] + (bytes[startPoint+2] << 8) + (bytes[startPoint+1] << 16) + (bytes[startPoint] << 24);
 }
 
 //length of input is 512
@@ -75,18 +83,18 @@ int main()
 {
     
    Message msg;
-   msg.msgID = 2049;
-   char ans[492];
+    msg.msgID = 2049;
+    msg.sourceID = 2;
+    msg.destinationID = 15298;
+    msg.trailingMsg = 1;
+    msg.functionID = 32;
+    strcpy(msg.payload, "hello world");
+   
+   char ans[512];
    getBytes(&msg, ans);
    
-   setMessage(&msg, ans);
-   printf("%d\n",msg.msgID);
-
-//   printf("%d\n", ans[0]);
-//   printf("%d\n", ans[1]);
-//   printf("%d\n", ans[2]);
-//   printf("%d\n", ans[3]);
-   
-    
-    
+   Message msg2;
+   setMessage(&msg2, ans);
+    printMessage(&msg2);
+ 
 }
