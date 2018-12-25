@@ -40,7 +40,7 @@ int nodeId = -1; //change it!
 Node node;
 int capacity = 100;
 int waitingLength = 0;
-Message **waiting =  (Message**)malloc(sizeof(Message*)*capacity);
+Message **waiting;
 
 
 int getUniqueID()
@@ -168,7 +168,7 @@ void send(int to, int length, char *str){
         //TODO
 
         out(sendMsg);
-        printMessage(sendMsg);
+        // printMessage(sendMsg);
         addWaitingMessage(sendMsg); 
     }
     free (allStr);
@@ -185,52 +185,28 @@ void getPayload(Message *packet, char *answer){
     }
 }
 
-
-
 void setPayload(Message *packet, char* new_payload){
-
     int i=0;
-
     while (i<492){
-
         packet->payload[i] = new_payload[i];
-
         i++;
-
     }
-
 }
-
-
 
 int byte2int(char *bytes, int startPoint){
-
     return bytes[startPoint+3] + (bytes[startPoint+2] << 8) + (bytes[startPoint+1] << 16) + (bytes[startPoint] << 24);
-
 }
 
-
-
 //length of input is 512
-
 void setMessage(Message *packet, char* bytes){
-
     packet->msgID = byte2int(bytes, 0);
-
     packet->sourceID = byte2int(bytes, 4);
-
     packet->destinationID = byte2int(bytes, 8);
-
     packet->trailingMsg = byte2int(bytes, 12);
-
     packet->functionID = byte2int(bytes, 16);
 
-    
-
     for (int i=0; i<492; i++)
-
          packet->payload[i] = bytes[i+20];
-
 }
 
 void int2byte(int num, char *bytes, int startPoint){
@@ -243,51 +219,25 @@ void int2byte(int num, char *bytes, int startPoint){
 //length of input is 512
 
 void getBytes(Message *packet, char *bytes){
-
     int2byte(packet->msgID, bytes, 0);
-
     int2byte(packet->sourceID, bytes, 4);
-
     int2byte(packet->destinationID, bytes, 8);
-
     int2byte(packet->trailingMsg, bytes, 12);
-
     int2byte(packet->functionID, bytes, 16);
-
-
-
     for (int i=0; i<492; i++)
-
         bytes[i+20] = packet->payload[i];
-
 }
 
-
-
 int main()
-
 {
-
+    waiting =  (Message**)malloc(capacity*sizeof(Message*));
+    
     nodeId = 65535;
-
     node.port=nodeId;
-
     node.ip= 0X0A000001;
-
     node.id = 1;
-
-    
-
     connect();
-
-    
-
-    
-
     send(5, 15, "abcd efgh ijkl\n");
-
     
-
- 
-
+    free(waiting);
 }
