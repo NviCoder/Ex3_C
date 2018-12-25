@@ -1,4 +1,3 @@
-
 /******************************************************************************
 
 
@@ -18,10 +17,8 @@ Write your code in this editor and press "Run" button to compile and execute it.
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <string.h>
-
-
 
 typedef struct Node{
     int ip;
@@ -111,9 +108,17 @@ void connect() {
     addWaitingMessage(connectMsg);
 }
 
-void responseConnect(Message *packetIn, Message *packetOut){
-    createAck(packetIn, packetOut);
+void responseConnect(Message *packetIn){
+    Message *response = (Message*) malloc(sizeof (Message));
+    
+    //TODO should to check the details
+    if (false)
+        createNack(packetIn, response);
+    else
+        createAck(packetIn, response);
     out(packetOut);
+    
+    free(response);
 
     //TODO add new node to the connected-list
 }
@@ -228,6 +233,35 @@ void getBytes(Message *packet, char *bytes){
     int2byte(packet->functionID, bytes, 16);
     for (int i=0; i<492; i++)
         bytes[i+20] = packet->payload[i];
+}
+
+void tcpInHandling(char *bytes){
+    Message *inMsg = (Message*) malloc(sizeof (Message));
+    getBytes(inMsg, bytes);
+    switch (inMsg->functionID){
+        case(1): //ack
+        
+            break;
+        case(2): //nack
+        
+            break;
+        case(4): //connect
+            responseConnect(inMsg);
+            break;
+        case(8): //discover
+        
+            break;            
+        case(16): //route
+        
+            break;
+        case(32): //send
+        
+            break;
+        case(64): //relay
+        
+            break;
+    }
+    
 }
 
 int main()
