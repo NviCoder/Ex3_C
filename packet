@@ -1,13 +1,25 @@
 /******************************************************************************
 
+
+
                             Online C Compiler.
+
                 Code, Compile, Run and Debug C program online.
+
 Write your code in this editor and press "Run" button to compile and execute it.
+
+
 
 *******************************************************************************/
 
+//8bit = 1byte = 1 char
+//4 char = 1 int
+
+
 #include <stdio.h>
 #include <string.h>
+
+
 
 typedef struct Node{
     int ip;
@@ -24,18 +36,18 @@ typedef struct Message{
     char payload[492];
 }Message;
 
-
 int nodeId = -1; //change it!
 Node node;
 int capacity = 100;
 int waitingLength = 0;
 Message **waiting =  (Message**)malloc(sizeof(Message*)*capacity);
 
+
 int getUniqueID()
 {
  static int idMsg=-1;
  idMsg++;
- return nodeId*1000 + idMsg;
+ return nodeId*1000 + idMsg; //create uniqe id for all nodes, limited by 1000 messages per node
 } 
 
 void out(Message *packetOut){
@@ -43,8 +55,10 @@ void out(Message *packetOut){
 }
 
 void addWaitingMessage(Message *packet){
-    if (waitingLength == capacity)
+    if (waitingLength == capacity){
         waiting = (Message**) realloc(waiting,sizeof(Message*)*(waitingLength*2));
+        capacity *= 2;
+    }
     waiting[waitingLength] = packet;
     waitingLength++;
 }
@@ -82,7 +96,7 @@ void connect() {
     //     printf("nack");
     //     return;
     // }
-    
+
     Message *connectMsg = (Message*) malloc(sizeof (Message));
     connectMsg->msgID = getUniqueID();
     connectMsg->sourceID = nodeId;
@@ -90,16 +104,15 @@ void connect() {
     connectMsg->trailingMsg = 0;
     connectMsg->functionID = 4;
     connectMsg->payload[0] = '\0';
-    
+
     out(connectMsg);
     addWaitingMessage(connectMsg);
 }
 
 void responseConnect(Message *packetIn, Message *packetOut){
-   
     createAck(packetIn, packetOut);
     out(packetOut);
-    
+
     //TODO add new node to the connected-list
 }
 
@@ -111,23 +124,23 @@ void getResponseConnect(Message *packetIn){
             firstConnectMessage = waiting[i];
             break;
         }
-    
-    if (firstConnectMessage == null){
+
+    if (firstConnectMessage == NULL){
         printf("nack");
         return;
     }
+
     if (packetIn->sourceID != firstConnectMessage->destinationID || packetIn->destinationID != node.id || packetIn->functionID != 1){
         printf("nack");
         free(firstConnectMessage);
         return;
     }
-    
+
      //TODO add new node to the connected-list
-     
+
     printf("connect to node number %d\n", packetIn->sourceID);
     free(firstConnectMessage);
 }
-
 
 void createSend(Message *packet, int from, int to, int trailing, char* msg){
     packet->msgID = getUniqueID();
@@ -144,25 +157,27 @@ void send(int to, int length, char *str){
     for (int i=0; i<length; i++)
         allStr[i+4] = str[i];
 
-    int num_of_messages = (length-4-1)/492 + 1; //4 chars for the total length of the message    
+    int num_of_messages = (length+4-1)/492 + 1; //4 chars for the total length of the message    
     for (int i=0; i<num_of_messages; i++){
         Message *sendMsg = (Message*) malloc(sizeof (Message));
         char currentStr[492];
         for (int j=0; j<492 && j<length+4-i*492; j++)
             currentStr[j] = allStr[i*492+j];
         createSend(sendMsg, nodeId, to, num_of_messages-i-1, currentStr);
-        
+
         //TODO
-        // send the message!!!
+
+        out(sendMsg);
         printMessage(sendMsg);
-        
-        free(sendMsg); //Is it OK?
+        addWaitingMessage(sendMsg); 
     }
     free (allStr);
+
 }
 
 //length of answer is 492
 void getPayload(Message *packet, char *answer){
+
     int i=0;
     while (i<492){
         answer[i]=packet->payload[i];
@@ -170,28 +185,52 @@ void getPayload(Message *packet, char *answer){
     }
 }
 
+
+
 void setPayload(Message *packet, char* new_payload){
+
     int i=0;
+
     while (i<492){
+
         packet->payload[i] = new_payload[i];
+
         i++;
+
     }
+
 }
+
+
 
 int byte2int(char *bytes, int startPoint){
+
     return bytes[startPoint+3] + (bytes[startPoint+2] << 8) + (bytes[startPoint+1] << 16) + (bytes[startPoint] << 24);
+
 }
 
+
+
 //length of input is 512
+
 void setMessage(Message *packet, char* bytes){
+
     packet->msgID = byte2int(bytes, 0);
+
     packet->sourceID = byte2int(bytes, 4);
+
     packet->destinationID = byte2int(bytes, 8);
+
     packet->trailingMsg = byte2int(bytes, 12);
+
     packet->functionID = byte2int(bytes, 16);
+
     
+
     for (int i=0; i<492; i++)
+
          packet->payload[i] = bytes[i+20];
+
 }
 
 void int2byte(int num, char *bytes, int startPoint){
@@ -199,32 +238,56 @@ void int2byte(int num, char *bytes, int startPoint){
     bytes[startPoint+1] = (num>>16) & 0xFF;
     bytes[startPoint+2] = (num>>8) & 0xFF;
     bytes[startPoint+3] = num & 0xFF;
-
 }
 
 //length of input is 512
+
 void getBytes(Message *packet, char *bytes){
+
     int2byte(packet->msgID, bytes, 0);
+
     int2byte(packet->sourceID, bytes, 4);
+
     int2byte(packet->destinationID, bytes, 8);
+
     int2byte(packet->trailingMsg, bytes, 12);
+
     int2byte(packet->functionID, bytes, 16);
 
+
+
     for (int i=0; i<492; i++)
+
         bytes[i+20] = packet->payload[i];
+
 }
 
+
+
 int main()
+
 {
+
     nodeId = 65535;
+
     node.port=nodeId;
+
     node.ip= 0X0A000001;
+
     node.id = 1;
+
     
+
     connect();
+
     
+
     
+
     send(5, 15, "abcd efgh ijkl\n");
+
     
+
  
+
 }
